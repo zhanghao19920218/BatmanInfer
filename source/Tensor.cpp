@@ -162,11 +162,86 @@ namespace BatmanInfer {
         CHECK(current_size == origin_size);
 
         std::vector<float> values;
+        // 行主序
         if (row_major)
             values = this->values(true);
         if (shapes.size() == 3) {
             this->data_.reshape(shapes.at(1), shapes.at(2), shapes.at(0));
             this->raw_shapes_ = {shapes.at(0), shapes.at(1), shapes.at(2)};
+        } else if (shapes.size() == 2) {
+            // 这是二维张量
+            this->data_.reshape(shapes.at(0), shapes.at(1), 1);
+            this->raw_shapes_ = {shapes.at(0), shapes.at(1)};
+        } else {
+            this->data_.reshape(1, shapes.at(0), 1);
+            this->raw_shapes_ = {shapes.at(0)};
         }
+
+        if (row_major)
+            this->Fill(values, true);
+    }
+
+    const float* Tensor<float>::raw_ptr() const {
+        CHECK(!this->data_.empty());
+        return this->data_.memptr();
+    }
+
+    bool Tensor<float>::empty() const {
+        return this->data_.empty();
+    }
+
+    const std::vector<uint32_t >& Tensor<float>::raw_shapes() const {
+        CHECK(!this->raw_shapes_.empty());
+        CHECK_LE(this->raw_shapes_.size(), 3);
+        CHECK_GE(this->raw_shapes_.size(), 1);
+        return this->raw_shapes_;
+    }
+
+    void Tensor<float>::Flatten(bool row_major) {
+        CHECK(!this->data_.empty());
+        if (this->raw_shapes_.size() == 1)
+            return;
+        // 获取原始的size
+        uint32_t vec_size = this->data_.size();
+        Reshape({vec_size}, row_major);
+    }
+
+    void Tensor<float>::Padding(const std::vector<uint32_t> &pads, float padding_value) {
+        CHECK(!this->data_.empty());
+        CHECK_EQ(pads.size(), 4);
+        // 四周填充的维度
+        uint32_t pad_rows1 = pads.at(0); // up
+        uint32_t pad_rows2 = pads.at(1); // bottom
+        uint32_t pad_cols1 = pads.at(2); // left
+        uint32_t pad_cols2 = pads.at(3); // right
+
+        // Original dimensions
+        uint32_t original_rows = this->rows();
+        uint32_t original_cols = this->cols();
+        uint32_t channels = this->channels();
+
+        // New dimensions after padding
+        uint32_t new_rows = original_rows + pad_rows1 + pad_rows2;
+        uint32_t new_cols = original_cols + pad_cols1 + pad_cols2;
+
+        // Create a new data cube with padded dimensions
+        arma::fcube new_data(new_rows,
+                             new_cols,
+                             channels,
+                             arma::fill::value(padding_value));
+
+        // Copy original data into the center of the new data cube
+        new_data.subcube(pad_rows1,
+                         pad_cols1,
+                         0,
+                         new_data.n_rows - pad_rows2 - 1,
+                         new_data.n_cols - pad_cols2 - 1,
+                         new_data.n_slices - 1) = this->data_;
+
+        // Replace the old data with the new padded data
+        this->data_ = std::move(new_data);
+
+        // Update the raw shapes to reflect the new dimensions
+        this->raw_shapes_ = {channels, new_rows, new_cols};
     }
 }

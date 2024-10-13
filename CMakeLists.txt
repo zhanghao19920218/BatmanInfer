@@ -22,19 +22,40 @@ find_package(Armadillo REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLOG REQUIRED libglog)
 
+# 查找 protobuf 包
+find_package(Protobuf REQUIRED)
+include_directories(${Protobuf_INCLUDE_DIRS})
+
+# 查找abseil
+find_package(absl REQUIRED)
+
+
+# 查找 ONNX 包
+find_package(onnx REQUIRED)
+include_directories(${ONNX_INCLUDE_DIRS})
+
+set(ONNX_LIBRARIES "/usr/local/lib")
+
 # 启动测试
 enable_testing()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/includes)
-include_directories(${GLOG_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/includes
+        ${Protobuf_INCLUDE_DIRS}
+        ${ONNX_INCLUDE_DIRS}
+        ${GLOG_INCLUDE_DIRS})
 
-link_directories(${GLOG_LIBRARY_DIRS})
+link_directories(${GLOG_LIBRARY_DIRS}
+                 ${ONNX_LIBRARIES})
 
 add_executable(BatmanInfer main.cpp
         test/test_operator.cpp
         source/Tensor.cpp
         test/test_create_tensor.cpp
-        test/tensor_get_values.cpp)
+        test/tensor_get_values.cpp
+        test/test_onnx.cpp
+        source/others/utils.cpp)
+
+#message("hello" ${Protobuf_LIBRARIES})
 
 # 链接GoogleTest库
 target_link_libraries(
@@ -42,6 +63,13 @@ target_link_libraries(
         GTest::gtest_main
         ${ARMADILLO_LIBRARIES}
         ${GLOG_LIBRARIES}
+        ${Protobuf_LIBRARIES}
+        "/usr/local/lib/libonnx.a"
+        "/usr/local/lib/libonnx_proto.a"
+        absl::base
+        absl::strings
+        absl::log
+        absl::log_internal_check_op  # 可能需要这个
 )
 
 # 添加测试

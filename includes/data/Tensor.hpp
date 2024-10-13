@@ -107,13 +107,13 @@ namespace BatmanInfer {
 //         * @param data 数据
 //         */
 //        void set_data(const arma::fcube& data);
-//
-//        /**
-//         * 返回张量是否为空
-//         * @return 张量是否为空
-//         */
-//        bool empty() const;
-//
+
+        /**
+         * 返回张量是否为空
+         * @return 张量是否为空
+         */
+        bool empty() const;
+
 //        /**
 //         * 返回张量中offset位置的元素
 //         * @param offset 需要访问的位置
@@ -134,11 +134,11 @@ namespace BatmanInfer {
 //         */
 //        std::vector<uint32_t > shapes() const;
 //
-//        /**
-//         * 张量的实际尺寸大小
-//         * @return 张量的实际尺寸大小
-//         */
-//        const std::vector<uint32_t >& raw_shapes() const;
+        /**
+         * 张量的实际尺寸大小
+         * @return 张量的实际尺寸大小
+         */
+        const std::vector<uint32_t >& raw_shapes() const;
 //
 //        /**
 //         * 返回张量中的数据
@@ -183,13 +183,13 @@ namespace BatmanInfer {
          * @return 特定位置的元素
          */
         float& at(uint32_t channel, uint32_t row, uint32_t col);
-//
-//        /**
-//         * 填充张量
-//         * @param pads  填充张量的尺寸
-//         * @param padding_value  填充张量
-//         */
-//        void Padding(const std::vector<uint32_t>& pads, float padding_value);
+
+        /**
+         * 填充张量
+         * @param pads  填充张量的尺寸
+         * @param padding_value  填充张量
+         */
+        void Padding(const std::vector<uint32_t>& pads, float padding_value);
 
         /**
          * 使用value值去初始化向量
@@ -233,11 +233,11 @@ namespace BatmanInfer {
          */
         void Reshape(const std::vector<uint32_t>& shape, bool row_major = false);
 
-//        /**
-//         * 展开张量
-//         * @param row_major
-//         */
-//        void Flatten(bool row_major = false);
+        /**
+         * 展开张量
+         * @param row_major
+         */
+        void Flatten(bool row_major = false);
 
         /**
          * 对张量中的元素进行过滤
@@ -245,12 +245,12 @@ namespace BatmanInfer {
          */
         void Transform(const std::function<float(float)>& filter);
 
-//        /**
-//         * 返回数据的原始指针
-//         * @return  返回数据的原始指针
-//         */
-//        float* raw_ptr();
-//
+        /**
+         * 返回数据的原始指针
+         * @return  返回数据的原始指针
+         */
+        const float* raw_ptr() const;
+
 //        /**
 //         * 返回数据的原始指针
 //         * @param offset 数据指针的偏移量
