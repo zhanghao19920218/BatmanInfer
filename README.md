@@ -21,3 +21,4 @@
 **已知问题**
 
 1. 编译`onnx`到系统需要先进行```protoc -I=. --cpp_out=. onnx.proto```
+2. 关注`CMakeLists`几个库的设置
