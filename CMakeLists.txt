@@ -54,7 +54,8 @@ add_executable(BatmanInfer main.cpp
         test/tensor_get_values.cpp
         test/test_onnx.cpp
         source/others/utils.cpp
-        source/onnx_conv/OnnxUtils.cpp)
+        source/onnx_conv/OnnxUtils.cpp
+        source/ir.cpp)
 
 #message("hello" ${Protobuf_LIBRARIES})
 

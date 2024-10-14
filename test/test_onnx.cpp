@@ -9,6 +9,7 @@
 #include <onnx/onnx_pb.h>
 #include <google/protobuf/text_format.h>
 #include <others/utils.hpp>
+#include <runtime/ir.h>
 
 TEST(test_ir, onnx_graph_ops) {
     const std::string& modelPath = "./model/model.onnx";
@@ -193,4 +194,14 @@ TEST(test_ir, onnx_graph_operands_and_params) {
             }
         }
     }
+}
+
+TEST(test_ir, onnx_model_load) {
+    using namespace BatmanInfer;
+
+    const std::string& modelPath = "./model/model.onnx";
+
+    // 加载图地址
+    auto graph = new ONNXGraph();
+    graph->load(modelPath);
 }
