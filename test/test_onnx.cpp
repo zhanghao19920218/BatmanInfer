@@ -204,4 +204,7 @@ TEST(test_ir, onnx_model_load) {
     // 加载图地址
     auto graph = new ONNXGraph();
     graph->load(modelPath);
+
+    // 获取算子的结果
+
 }

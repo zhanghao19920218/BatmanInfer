@@ -9,6 +9,7 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
+#include <onnx/onnx_pb.h>
 
 namespace BatmanInfer {
     bool onnx_read_proto_from_binary(const char* filepath,
@@ -16,6 +17,10 @@ namespace BatmanInfer {
 
     bool onnx_write_proto_from_binary(const char* filepath,
                                       const google::protobuf::Message* message);
+
+    void getOperatorAndOperandCount(const onnx::ModelProto& model,
+                                    int& operator_count,
+                                    int& operand_count);
 }
 
 #endif //BATMANINFER_ONNXUTILS_HPP

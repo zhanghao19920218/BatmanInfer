@@ -419,9 +419,76 @@ namespace BatmanInfer {
             return;
         }
 
-        //
+        // 读取操作符和操作数的数量
+        int operator_count = 0;
+        int operand_count = 0;
 
+        getOperatorAndOperandCount(modelProto,
+                                   operator_count,
+                                   operand_count);
 
+        // 获取算子图
+        auto graph = modelProto.graph();
+
+        // 获取算子的信息
+        for (int i = 0; i < operator_count; ++i)
+        {
+            // 获取每一个算子
+            const onnx::NodeProto& node = graph.node(i);
+
+            std::string type = node.op_type();
+            std::string name = node.name();
+            int input_count = node.input_size();
+            int output_count = node.output_size();
+
+            ONNXOperator* op = new_operator(type, name);
+
+            for (int j = 0; j < input_count; j++)
+            {
+                // 获取第 j 个输入的名称
+                const std::string& operand_name = node.input(j);
+
+                // 获取输入的操作数
+                ONNXOperand* r = new_operand(operand_name);
+                r->consumers.push_back(op);
+                // 输入的消费者
+                op->inputs.push_back(r);
+            }
+
+            for (int j = 0; j < output_count; j++)
+            {
+                std::string operand_name;
+
+                ONNXOperand* r = new_operand(operand_name);
+                r->producer = op;
+                op->outputs.emplace_back(r);
+            }
+        }
+
+    }
+
+    ONNXOperand *ONNXGraph::get_operand(const std::string &name) {
+        for (ONNXOperand* r : operands)
+        {
+            if (r->name == name)
+                return r;
+        }
+        return 0;
+    }
+
+    ONNXOperator *ONNXGraph::new_operator(const std::string &type, const std::string &name) {
+        auto* op = new ONNXOperator;
+        op->type = type;
+        op->name = name;
+        operators.emplace_back(op);
+        return op;
+    }
+
+    ONNXOperand *ONNXGraph::new_operand(const std::string &name) {
+        auto* r = new ONNXOperand;
+        r->name = name;
+        operands.emplace_back(r);
+        return r;
     }
 
 }

@@ -39,4 +39,21 @@ namespace BatmanInfer {
         fs.close();
         return true;
     }
+
+    void getOperatorAndOperandCount(const onnx::ModelProto& model,
+                                    int& operator_count,
+                                    int& operand_count) {
+        const onnx::GraphProto& graph = model.graph();
+
+        // 获取节点数量
+        operator_count = graph.node_size();
+
+        // 获取初始化张量以及输入输出的数量
+        int initializer_count = graph.initializer_size();
+        int input_count = graph.input_size();
+        int output_count = graph.output_size();
+
+        // 计算操作数的总数
+        operand_count = initializer_count + input_count + output_count;
+    }
 }
