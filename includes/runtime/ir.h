@@ -212,7 +212,7 @@ namespace BatmanInfer {
          * @param name: 操作数的名称
          * @return: 指向找到的常量 ONNXOperand 的指针，如果不存在则返回 nullptr
          */
-        const ONNXOperand* get_operand(const std::string& name) const;
+        [[nodiscard]] const ONNXOperand* get_operand(const std::string& name) const;
 
         // 存储图中的所有操作符
         std::vector<ONNXOperator*> operators;

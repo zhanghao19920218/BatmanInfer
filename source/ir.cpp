@@ -360,6 +360,20 @@ namespace BatmanInfer {
         std::cout << std::endl;
     }
 
+    // 查找输出张量的信息
+    void find_output_tensor_info(const std::string& output_name,
+                                 const onnx::GraphProto& graph,
+                                 ONNXOperator *op) {
+        for (const auto& value_info : graph.value_info()) {
+            if (value_info.name() == output_name) {
+                auto operand = new ONNXOperand();
+                print_tensor_info(value_info, operand);
+                op->outputs.emplace_back(operand);
+                return;
+            }
+        }
+    }
+
     void find_input_tensor_info(const std::string& input_name,
                                 const onnx::GraphProto& graph,
                                 ONNXOperator *op)
@@ -404,59 +418,12 @@ namespace BatmanInfer {
                 find_input_tensor_info(input_name, graph, op);
             }
         }
-    }
 
-    static void load_shape(ONNXOperator *op,
-                           const std::string &key,
-                           const std::string &value) {
-        // 初始化为null, 表示尚未找到匹配的 Operand
-        ONNXOperand *operand = nullptr;
-
-        // 在操作符的输入中查找名称匹配的 Operand
-        for (auto r: op->inputs) {
-            if (r->name == key) {
-                // 找到匹配的 Operand
-                operand = r;
-                // 退出循环
-                break;
-            }
-        }
-
-        // 如果在输入中未找到，则在输出中查找
-        if (!operand) {
-            for (auto r: op->outputs) {
-                if (r->name == key) {}
-                operand = r; // 找到匹配的 Operand
-                break;  // 退出循环
-            }
-        }
-
-        // 如果仍未找到匹配的 Operand, 输出错误信息并返回
-        if (!operand) {
-            fprintf(stderr, "no such operand %s for operator %s\n", key.c_str(), op->name.c_str());
-            return;
-        }
-
-        // 从 value 字符串中提取类型信息
-        std::string typestr = value.substr(value.find_last_of(')') + 1);
-        operand->type = string_to_type(typestr.c_str());  // 将类型字符串转换为类型标识符
-
-        // 从 value 字符串中提取形状信息
-        std::string lc = value.substr(1, value.find_last_of(')') - 1);
-        std::istringstream lcss(lc);  // 使用字符串流解析形状字符串
-
-        operand->shape.clear();  // 清除当前形状信息
-
-        // 逐个解析形状元素
-        while (!lcss.eof()) {
-            std::string elem;
-            std::getline(lcss, elem, ',');  // 获取逗号分隔的元素
-
-            if (elem == "?") {
-                operand->shape.push_back(-1);  // 未知维度用 -1 表示
-            } else {
-                int i = std::stoi(elem);  // 将字符串转换为整数
-                operand->shape.push_back(i);  // 添加到形状向量中
+        for (const auto& output_name : node.output()) {
+            // 查找不是权重的值
+            if (!is_initializer(output_name, graph)) {
+                std::cout << "Output name: " << output_name << "\n";
+                find_output_tensor_info(output_name, graph, op);
             }
         }
     }
@@ -617,6 +584,33 @@ namespace BatmanInfer {
         r->name = name;
         operands.emplace_back(r);
         return r;
+    }
+
+    ONNXOperator *
+    ONNXGraph::new_operator_before(const std::string &type, const std::string &name, const ONNXOperator *cur) {
+        auto *op = new ONNXOperator;
+        op->type = type;
+        op->name = name;
+        operators.insert(std::find(operators.begin(), operators.end(), cur), op);
+        return op;
+    }
+
+    ONNXOperator *
+    ONNXGraph::new_operator_after(const std::string &type, const std::string &name, const ONNXOperator *cur) {
+        auto *op = new ONNXOperator;
+        op->type = type;
+        op->name = name;
+        operators.insert(std::find(operators.begin(), operators.end(), cur) + 1, op);
+        return op;
+    }
+
+    const ONNXOperand *ONNXGraph::get_operand(const std::string &name) const {
+        for (const ONNXOperand *r : operands)
+        {
+            if (r->name == name)
+                return r;
+        }
+        return nullptr;
     }
 
 }

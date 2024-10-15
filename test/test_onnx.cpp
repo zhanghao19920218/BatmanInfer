@@ -206,5 +206,5 @@ TEST(test_ir, onnx_model_load) {
     graph->load(modelPath);
 
     // 获取算子的结果
-
+    std::cout << "ONNX Graph build successfully" << std::endl;
 }
