@@ -21,6 +21,13 @@ namespace BatmanInfer {
     void getOperatorAndOperandCount(const onnx::ModelProto& model,
                                     int& operator_count,
                                     int& operand_count);
+
+    /**
+     * 将ONNX的模型映射为自定义的model里面
+     * @param onnx_type
+     * @return
+     */
+    int map_onnx_type_to_custom_type(int onnx_type);
 }
 
 #endif //BATMANINFER_ONNXUTILS_HPP

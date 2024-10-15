@@ -315,22 +315,93 @@ namespace BatmanInfer {
         return *this;
     }
 
+    /**
+     * 是不是权重的输入
+     * @param input_name
+     * @param graph
+     * @return
+     */
+    bool is_initializer(const std::string &input_name, const onnx::GraphProto &graph) {
+        for (const auto &initializer: graph.initializer()) {
+            if (initializer.name() == input_name) {
+                return true; // Input is an initializer (weight)
+            }
+        }
+        return false;
+    }
+
     static void load_parameter(ONNXOperator *op,
                                const std::string &key,
                                const std::string &value) {
         op->params[key] = ONNXParameter::parse_from_string(value);
     }
 
-    static void load_input_key(ONNXOperator *op,
-                               const std::string &key,
-                               const std::string &value) {
-        op->input_names.resize(op->inputs.size());
+    /**
+     * 打印Tensor信息
+     * @param tensor
+     */
+    static void print_tensor_info(const onnx::ValueInfoProto& tensor, ONNXOperand* operand)
+    {
+        operand->name = tensor.name();
+        const auto& type = tensor.type().tensor_type();
+        int data_type = type.elem_type();
+        operand->type = map_onnx_type_to_custom_type(data_type);
+        operand->shape.clear();
+        for (const auto& dim : type.shape().dim()) {
+            operand->shape.push_back(dim.dim_value());
+        }
 
-        for (size_t i = 0; i < op->inputs.size(); i++) {
-            const ONNXOperand *operand = op->inputs[i];
-            if (operand->name == value) {
-                op->input_names[i] = key;
-                break;
+        std::cout << "Tensor name: " << operand->name << "\t";
+        std::cout << "Data type: " << operand->type << "\t";
+        std::cout << "Shape: ";
+        for (const auto& dim : operand->shape) {
+            std::cout << dim << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    void find_input_tensor_info(const std::string& input_name,
+                                const onnx::GraphProto& graph,
+                                ONNXOperator *op)
+    {
+        for (const auto& node : graph.node()) {
+            for (const auto& output_name : node.output()) {
+                if (output_name == input_name) {
+                    std::cout << "Found input from node: " << node.op_type() << std::endl;
+                    for (const auto& input : node.input()) {
+                        if (!is_initializer(input, graph)) {
+                            find_input_tensor_info(input, graph, op);
+                        }
+                    }
+                    return;
+                }
+            }
+        }
+
+        // 如果在节点中找不到，检查图的输入
+        for (const auto& input_tensor : graph.input()) {
+            if (input_tensor.name() == input_name) {
+                std::cout << "Input tensor is an input to the graph." << std::endl;
+                auto operand = new ONNXOperand();
+                print_tensor_info(input_tensor, operand);
+                op->input_names.emplace_back(input_name);
+                op->inputs.emplace_back(operand);
+                return;
+            }
+        }
+    }
+
+
+    static void load_input_key(ONNXOperator *op,
+                               const onnx::NodeProto& node,
+                               const onnx::GraphProto& graph) {
+        op->inputs.clear();
+        op->input_names.clear();
+        for (const auto& input_name: node.input()) {
+            // 查找不是权重的值
+            if (!is_initializer(input_name, graph)) {
+                std::cout << "Input name: " << input_name << "\n";
+                find_input_tensor_info(input_name, graph, op);
             }
         }
     }
@@ -409,7 +480,7 @@ namespace BatmanInfer {
      * @param graph
      * @return
      */
-    const onnx::TensorProto *is_initializer(const std::string &input_name, const onnx::GraphProto &graph) {
+    const onnx::TensorProto *is_initializer_tensor(const std::string &input_name, const onnx::GraphProto &graph) {
         for (const auto &initializer: graph.initializer()) {
             if (initializer.name() == input_name) {
                 return &initializer; // Input is an initializer (weight)
@@ -417,6 +488,8 @@ namespace BatmanInfer {
         }
         return nullptr;
     }
+
+
 
     /**
      * Function to get the weight names from a node
@@ -432,7 +505,7 @@ namespace BatmanInfer {
             const std::string &input_name = node.input(i);
 
             // Check if this input is part of the initializer (i.e., it's a weight)
-            auto tensor = is_initializer(input_name, graph);
+            auto tensor = is_initializer_tensor(input_name, graph);
             if (tensor) {
                 weight_names[input_name] = tensor;
             }
@@ -516,6 +589,9 @@ namespace BatmanInfer {
 
             // 对操作符进行权重参数加载
             load_attribute(op, node, graph);
+
+            // 对操作数进行权重参数加载
+            load_input_key(op, node, graph);
         }
 
     }

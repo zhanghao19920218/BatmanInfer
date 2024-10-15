@@ -56,4 +56,38 @@ namespace BatmanInfer {
         // 计算操作数的总数
         operand_count = initializer_count + input_count + output_count;
     }
+
+    // 将 ONNX 数据类型映射到自定义整数类型
+    int map_onnx_type_to_custom_type(int onnx_type) {
+        switch (onnx_type) {
+            case onnx::TensorProto::UNDEFINED:
+                return 0; // null
+            case onnx::TensorProto::FLOAT:
+                return 1; // f32
+            case onnx::TensorProto::DOUBLE:
+                return 2; // f64
+            case onnx::TensorProto::FLOAT16:
+                return 3; // f16
+            case onnx::TensorProto::INT32:
+                return 4; // i32
+            case onnx::TensorProto::INT64:
+                return 5; // i64
+            case onnx::TensorProto::INT16:
+                return 6; // i16
+            case onnx::TensorProto::INT8:
+                return 7; // i8
+            case onnx::TensorProto::UINT8:
+                return 8; // u8
+            case onnx::TensorProto::BOOL:
+                return 9; // bool
+            case onnx::TensorProto::COMPLEX64:
+                return 10; // cp64
+            case onnx::TensorProto::COMPLEX128:
+                return 11; // cp128
+            case onnx::TensorProto::BFLOAT16:
+                return 12; // cp32
+            default:
+                return -1; // 未知类型
+        }
+    }
 }
