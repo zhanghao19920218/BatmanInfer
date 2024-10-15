@@ -96,7 +96,7 @@ namespace BatmanInfer {
         explicit ONNXAttribute(const onnx::TensorProto& tensor);
 
         std::vector<int> shape;
-        std::vector<char> data;
+        std::vector<float> data;
         // 0=null 1=f32 2=f64 3=f16 4=i32 5=i64 6=i16 7=i8 8=u8 9=bool
         int type;
     };
