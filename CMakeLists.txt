@@ -55,7 +55,8 @@ add_executable(BatmanInfer main.cpp
         test/test_onnx.cpp
         source/others/utils.cpp
         source/onnx_conv/OnnxUtils.cpp
-        source/ir.cpp)
+        source/ir.cpp
+        source/runtime_attr.cpp)
 
 #message("hello" ${Protobuf_LIBRARIES})
 
