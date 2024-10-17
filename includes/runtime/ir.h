@@ -158,7 +158,7 @@ namespace BatmanInfer {
         ONNXGraph();
         ~ONNXGraph();
 
-        void load(const std::string& model_path);
+        int load(const std::string& model_path);
 
         void save(const std::string& model_path);
 

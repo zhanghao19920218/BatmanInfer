@@ -54,7 +54,7 @@ namespace BatmanInfer {
         int output_count = graph.output_size();
 
         // 计算操作数的总数
-        operand_count = initializer_count + input_count + output_count;
+        operand_count = initializer_count + input_count;
     }
 
     // 将 ONNX 数据类型映射到自定义整数类型
@@ -89,5 +89,26 @@ namespace BatmanInfer {
             default:
                 return -1; // 未知类型
         }
+    }
+
+    bool is_data_input(const std::string& input_name) {
+        return input_name.find("weight") == std::string::npos &&
+               input_name.find("bias") == std::string::npos;
+    }
+
+    /**
+     * 函数用于判断输入是否为数据输入
+     * @param input_name
+     * @return
+     */
+    int get_data_input_count(const onnx::NodeProto &node) {
+        int data_input_count = 0;
+        for (int i = 0; i < node.input_size(); ++i) {
+            const std::string& input_name = node.input(i);
+            if (is_data_input(input_name)) {
+                ++data_input_count;
+            }
+        }
+        return data_input_count;
     }
 }

@@ -13,6 +13,7 @@
 #include "runtime/ir.h"
 #include "runtime_attr.hpp"
 #include "runtime_operand.hpp"
+#include "runtime_parameter.hpp"
 
 namespace BatmanInfer {
     class Layer;
@@ -41,6 +42,11 @@ namespace BatmanInfer {
         std::vector<std::shared_ptr<RuntimeOperand>> input_operands_seq;
         // 输出节点的名字和节点对应
         std::map<std::string, std::shared_ptr<RuntimeOperator>> output_operators;
+
+        // 算子的参数信息
+        std::map<std::string, RuntimeParameter*> params;
+        // 算子的属性信息, 内涵权重信息
+        std::map<std::string, std::shared_ptr<RuntimeAttribute>> attribute;
     };
 }
 

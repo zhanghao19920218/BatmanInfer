@@ -28,6 +28,13 @@ namespace BatmanInfer {
      * @return
      */
     int map_onnx_type_to_custom_type(int onnx_type);
+
+    /**
+     * 获取数据输入的数量
+     * @param node 当前算子
+     * @return 算子当前的input数量
+     */
+    int get_data_input_count(const onnx::NodeProto &node);
 }
 
 #endif //BATMANINFER_ONNXUTILS_HPP
