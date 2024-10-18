@@ -8,7 +8,7 @@
 #include <onnx/onnx_pb.h>
 
 namespace BatmanInfer {
-    std::string ShapeStr(const onnx::TypeProto& type_proto);
+    std::string ShapeStr(const std::vector<int> &shapes);
 }
 
 #endif //BATMANINFER_UTILS_H

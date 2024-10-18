@@ -367,6 +367,7 @@ namespace BatmanInfer {
 
         for (const auto& value_info : graph.value_info()) {
             if (value_info.name() == input_name) {
+                op->input_names[index] = input_name;
                 print_tensor_info(value_info, op->inputs[index]);
                 return;
             }
@@ -375,6 +376,7 @@ namespace BatmanInfer {
         // 如果在节点中找不到，检查图的输入
         for (const auto& input_tensor : graph.input()) {
             if (input_tensor.name() == input_name) {
+                op->input_names[index] = input_name;
                 print_tensor_info(input_tensor, op->inputs[index]);
                 return;
             }
@@ -382,6 +384,7 @@ namespace BatmanInfer {
 
         for (const auto& output_tensor : graph.output()) {
             if (output_tensor.name() == input_name) {
+                op->input_names[index] = input_name;
                 print_tensor_info(output_tensor, op->inputs[index]);
                 return;
             }
@@ -438,9 +441,11 @@ namespace BatmanInfer {
                 output_shape.push_back(-1);  // 未定义的维度
             }
         }
+        op->input_names.resize(1);
         op->inputs[0]->name = "output";
         op->inputs[0]->type = custom_type;
         op->inputs[0]->shape = output_shape;
+        op->input_names[0] = "output";
     }
 
     /**

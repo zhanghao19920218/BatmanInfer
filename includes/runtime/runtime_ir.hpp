@@ -51,6 +51,14 @@ namespace BatmanInfer {
          */
         const std::vector<std::shared_ptr<RuntimeOperator>> &operators() const;
 
+        /**
+         * 构建计算图
+         * @param input_name 计算图输入节点的名称
+         * @param output_name 计算图输出节点的名称
+         */
+        void Build(const std::string &input_name,
+                   const std::string &output_name);
+
     private:
         /**
          * 初始化Batman Infer计算图节点中的输入操作数
@@ -77,11 +85,40 @@ namespace BatmanInfer {
          * @param attrs ONNX节点属性
          * @param runtime_operator  计算图节点
          */
-        static void InitGraphAttrs(const std::map<std::string, ONNXAttribute> &attrs,
-                                   const std::shared_ptr<RuntimeOperator> &runtime_operator);
+        static void
+        InitGraphAttrs(const std::map<std::string, ONNXAttribute> &attrs,
+                       const std::shared_ptr<RuntimeOperator> &runtime_operator);
+
+        /**
+         * 初始化Batman Infer计算图的结点参数
+         * @param params ONNX中的参数属性
+         * @param runtime_operator 计算图节点
+         */
+        static void
+        InitGraphParams(const std::map<std::string, ONNXParameter> &params,
+                        const std::shared_ptr<RuntimeOperator> &runtime_operator);
+
+        /**
+         * 拓扑排序制作推理图
+         * @param root_op
+         */
+        void ReverseToPo(const std::shared_ptr<RuntimeOperator> &root_op);
+
+    private:
+        enum class GraphState {
+            NeedInit = -2,
+            NeedBuild = -1,
+            Complete = 0,
+        };
 
     public:
+        /**
+         * 返回模型当前的状态
+         * @return 返回模型当前的状态
+         */
+        GraphState graph_state() const;
     private:
+        GraphState graph_state_ = GraphState::NeedInit;
         /**
          * 计算图输入节点的名称
          */
@@ -102,6 +139,10 @@ namespace BatmanInfer {
          */
         std::vector<std::shared_ptr<RuntimeOperator>> operators_;
         std::map<std::string, std::shared_ptr<RuntimeOperator>> operators_maps_;
+        /**
+         * 拓扑的算子
+         */
+        std::vector<std::shared_ptr<RuntimeOperator>> to_po_operators_;
 
         /**
          * Onnx的graph

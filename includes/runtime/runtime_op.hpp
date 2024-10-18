@@ -48,6 +48,12 @@ namespace BatmanInfer {
         // 算子的属性信息, 内涵权重信息
         std::map<std::string, std::shared_ptr<RuntimeAttribute>> attribute;
     };
+
+    class RuntimeOperatorUtils {
+    public:
+        static void InitOperatorInput(
+                const std::vector<std::shared_ptr<RuntimeOperator>>& operators);
+    };
 }
 
 #endif //BATMAN_INFER_RUNTIME_OP_HPP

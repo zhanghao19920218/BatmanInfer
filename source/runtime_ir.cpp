@@ -68,6 +68,16 @@ namespace BatmanInfer {
                 const std::map<std::string, ONNXAttribute> &attrs = op->attrs;
                 if (!attrs.empty())
                     InitGraphAttrs(attrs, runtime_operator);
+
+                // 初始化算子中的Parameter
+                const std::map<std::string, ONNXParameter> &params = op->params;
+                if (!params.empty())
+                    InitGraphParams(params, runtime_operator);
+
+                this->operators_.push_back(runtime_operator);
+                this->operators_maps_.insert({runtime_operator->name,
+                                              runtime_operator});
+
             }
         }
         return true;
@@ -129,5 +139,123 @@ namespace BatmanInfer {
         }
     }
 
+    void RuntimeGraph::InitGraphParams(const std::map<std::string, ONNXParameter> &params,
+                                       const std::shared_ptr<RuntimeOperator> &runtime_operator) {
+        for (const auto &[name, parameter]: params) {
+            const int type = parameter.type;
+            switch (type) {
+                case int(RuntimeParameterType::bParameterUnknown): {
+                    RuntimeParameter *runtime_parameter = new RuntimeParameter;
+                    runtime_operator->params.insert({name, runtime_parameter});
+                    break;
+                }
+                case int(RuntimeParameterType::bParameterBool): {
+                    RuntimeParameterBool *runtime_parameter = new RuntimeParameterBool;
+                    runtime_parameter->value = parameter.b;
+                    runtime_operator->params.insert({name, runtime_parameter});
+                    break;
+                }
+
+                case int(RuntimeParameterType::bParameterInt): {
+                    RuntimeParameterInt *runtime_parameter = new RuntimeParameterInt;
+                    runtime_parameter->value = parameter.i;
+                    runtime_operator->params.insert({name, runtime_parameter});
+                    break;
+                }
+
+                case int(RuntimeParameterType::bParameterFloat): {
+                    RuntimeParameterFloat *runtime_parameter = new RuntimeParameterFloat;
+                    runtime_parameter->value = parameter.f;
+                    runtime_operator->params.insert({name, runtime_parameter});
+                    break;
+                }
+
+                case int(RuntimeParameterType::bParameterString): {
+                    RuntimeParameterString *runtime_parameter = new RuntimeParameterString;
+                    runtime_parameter->value = parameter.s;
+                    runtime_operator->params.insert({name, runtime_parameter});
+                    break;
+                }
+
+                case int(RuntimeParameterType::bParameterIntArray): {
+                    RuntimeParameterIntArray *runtime_parameter =
+                            new RuntimeParameterIntArray;
+                    runtime_parameter->value = parameter.ai;
+                    runtime_operator->params.insert({name, runtime_parameter});
+                    break;
+                }
+
+                case int(RuntimeParameterType::bParameterFloatArray): {
+                    RuntimeParameterFloatArray *runtime_parameter =
+                            new RuntimeParameterFloatArray;
+                    runtime_parameter->value = parameter.af;
+                    runtime_operator->params.insert({name, runtime_parameter});
+                    break;
+                }
+                case int(RuntimeParameterType::bParameterStringArray): {
+                    RuntimeParameterStringArray *runtime_parameter =
+                            new RuntimeParameterStringArray;
+                    runtime_parameter->value = parameter.as;
+                    runtime_operator->params.insert({name, runtime_parameter});
+                    break;
+                }
+                default: {
+                    LOG(FATAL) << "Unknown parameter type: " << type;
+                }
+            }
+        }
+    }
+
+    void RuntimeGraph::ReverseToPo(const std::shared_ptr<RuntimeOperator> &root_op) {
+        CHECK(root_op != nullptr) << "Current operator is nullptr";
+        root_op->has_forward = true;
+        // 获取后面的算子
+        const auto &next_ops = root_op->output_operators;
+        for (const auto &[_, op]: next_ops) {
+            if (op != nullptr) {
+                // 如果没有前面的算子
+                if (!op->has_forward)
+                    this->ReverseToPo(op);
+            }
+        }
+        for (const auto &[_, op]: next_ops)
+            CHECK_EQ(op->has_forward, true);
+        this->to_po_operators_.push_back(root_op);
+    }
+
+    void RuntimeGraph::Build(const std::string &input_name, const std::string &output_name) {
+        if (graph_state_ == GraphState::Complete) {
+            LOG(INFO) << "Model has been built already!";
+            return;
+        }
+
+        if (graph_state_ == GraphState::NeedInit) {
+            bool init_graph = Init();
+            LOG_IF(FATAL, !init_graph) << "Init graph failed!";
+        }
+
+        CHECK(graph_state_ >= GraphState::NeedBuild)
+             << "Graph status error, current state is " << int(graph_state_);
+        LOG_IF(FATAL, this->operators_.empty())
+             << "Graph operators is empty, may can not be init";
+
+        // 构建图关系
+        for (const auto &current_op : this->operators_) {
+            // 获取当前节点的所有后继节点的names, 遍历根据next_op_name从operators_maps_中插入所需要的结点
+            const std::vector<std::string> &output_names = current_op->output_names;
+            for (const auto &b_output_name: output_names) {
+                if (const auto &output_op = this->operators_maps_.find(b_output_name);
+                    output_op != this->operators_maps_.end())
+                    current_op->output_operators.insert({b_output_name, output_op->second});
+            }
+        }
+
+        // 初始化结点的输入和输出空间
+
+    }
+
+    RuntimeGraph::GraphState RuntimeGraph::graph_state() const {
+        return this->graph_state_;
+    }
 
 }
